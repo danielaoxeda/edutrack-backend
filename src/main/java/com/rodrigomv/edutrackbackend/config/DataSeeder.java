@@ -48,15 +48,34 @@ public class DataSeeder {
     private final NotificacionRepository notificacionRepository;
 
     @Bean
-    @Profile({"dev", "seed", "mysql"})
     public CommandLineRunner seedData() {
         return args -> {
-            if (usuarioRepository.count() > 0) {
-                log.info("Base de datos ya tiene datos. Saltando seeder.");
-                return;
-            }
-
             log.info("=== INICIANDO DATA SEEDER ===");
+            
+            // Limpiar datos existentes
+            if (usuarioRepository.count() > 0) {
+                log.info("Limpiando datos existentes...");
+                notificacionRepository.deleteAll();
+                entregaRepository.deleteAll();
+                actividadRepository.deleteAll();
+                asistenciaRepository.deleteAll();
+                matriculaRepository.deleteAll();
+                sesionRepository.deleteAll();
+                semanaRepository.deleteAll();
+                docenteSeccionRepository.deleteAll();
+                criterioRepository.deleteAll();
+                seccionRepository.deleteAll();
+                estudianteRepository.deleteAll();
+                docenteRepository.deleteAll();
+                periodoRepository.deleteAll();
+                cursoRepository.deleteAll();
+                usuarioRolRepository.deleteAll();
+                usuarioRepository.deleteAll();
+                rolPermisoRepository.deleteAll();
+                rolRepository.deleteAll();
+                permisoRepository.deleteAll();
+                log.info("Datos limpios.");
+            }
 
             // 1. ROLES
             log.info("Creando roles...");
@@ -379,6 +398,7 @@ public class DataSeeder {
 
     private Permiso createPermiso(String recurso, String accion) {
         Permiso permiso = new Permiso();
+        permiso.setNombre(recurso + ":" + accion);
         permiso.setRecurso(recurso);
         permiso.setAccion(accion);
         return permisoRepository.save(permiso);
