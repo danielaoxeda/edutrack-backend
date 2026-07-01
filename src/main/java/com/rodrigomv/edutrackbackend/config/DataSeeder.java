@@ -9,6 +9,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ import java.util.List;
 public class DataSeeder {
 
     // ==================== REPOSITORIES ====================
+    private final PasswordEncoder passwordEncoder;
     private final RolRepository rolRepository;
     private final PermisoRepository permisoRepository;
     private final RolPermisoRepository rolPermisoRepository;
@@ -46,7 +48,7 @@ public class DataSeeder {
     private final NotificacionRepository notificacionRepository;
 
     @Bean
-    @Profile({"dev", "seed"})
+    @Profile({"dev", "seed", "mysql"})
     public CommandLineRunner seedData() {
         return args -> {
             if (usuarioRepository.count() > 0) {
@@ -394,7 +396,7 @@ public class DataSeeder {
         u.setNombres(nombres);
         u.setApellidos(apellidos);
         u.setEmail(email);
-        u.setPasswordHash(password); // En produccion usar BCrypt
+        u.setPasswordHash(passwordEncoder.encode(password)); // BCrypt hash
         u.setEstado(estado);
         u.setCreatedAt(LocalDateTime.now());
         return usuarioRepository.save(u);
