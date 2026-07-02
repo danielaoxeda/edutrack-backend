@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        return buildResponse(HttpStatus.UNAUTHORIZED, "El correo o la contrasena son incorrectos");
     }
 
     @ExceptionHandler(ResponseStatusException.class)
