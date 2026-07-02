@@ -4,6 +4,7 @@ import com.rodrigomv.edutrackbackend.persistence.entity.Usuario;
 import com.rodrigomv.edutrackbackend.persistence.enums.UsuarioEstado;
 import com.rodrigomv.edutrackbackend.persistence.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.Optional;
 public class UsuarioService {
     
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
     
     public List<Usuario> findAll() {
         return usuarioRepository.findAll();
@@ -38,11 +40,13 @@ public class UsuarioService {
         if (usuario.getCreatedAt() == null) {
             usuario.setCreatedAt(LocalDateTime.now());
         }
+        encodePasswordIfNeeded(usuario);
         return usuarioRepository.save(usuario);
     }
     
     public Usuario update(Long id, Usuario usuario) {
         usuario.setId(id);
+        encodePasswordIfNeeded(usuario);
         return usuarioRepository.save(usuario);
     }
     
@@ -52,5 +56,18 @@ public class UsuarioService {
     
     public boolean existsByEmail(String email) {
         return usuarioRepository.existsByEmail(email);
+    }
+
+    private void encodePasswordIfNeeded(Usuario usuario) {
+        String passwordHash = usuario.getPasswordHash();
+        if (passwordHash == null || passwordHash.isBlank()) {
+            return;
+        }
+
+        if (passwordHash.startsWith("$2a$") || passwordHash.startsWith("$2b$") || passwordHash.startsWith("$2y$")) {
+            return;
+        }
+
+        usuario.setPasswordHash(passwordEncoder.encode(passwordHash));
     }
 }
