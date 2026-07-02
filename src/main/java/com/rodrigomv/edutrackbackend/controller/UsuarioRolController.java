@@ -1,11 +1,12 @@
 package com.rodrigomv.edutrackbackend.controller;
 
-import com.rodrigomv.edutrackbackend.persistence.entity.UsuarioRol;
+import com.rodrigomv.edutrackbackend.dto.usuarioRol.UsuarioRolRequestDTO;
+import com.rodrigomv.edutrackbackend.dto.usuarioRol.UsuarioRolResponseDTO;
 import com.rodrigomv.edutrackbackend.service.UsuarioRolService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -17,30 +18,30 @@ public class UsuarioRolController {
     private final UsuarioRolService usuarioRolService;
     
     @GetMapping
-    public ResponseEntity<List<UsuarioRol>> findAll() {
+    public ResponseEntity<List<UsuarioRolResponseDTO>> findAll() {
         return ResponseEntity.ok(usuarioRolService.findAll());
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<UsuarioRol> findById(@PathVariable Long id) {
+    public ResponseEntity<UsuarioRolResponseDTO> findById(@PathVariable Long id) {
         return usuarioRolService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<UsuarioRol>> findByUsuario(@PathVariable Long usuarioId) {
+    public ResponseEntity<List<UsuarioRolResponseDTO>> findByUsuario(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(usuarioRolService.findByUsuario(usuarioId));
     }
     
     @GetMapping("/rol/{rolId}")
-    public ResponseEntity<List<UsuarioRol>> findByRol(@PathVariable Long rolId) {
+    public ResponseEntity<List<UsuarioRolResponseDTO>> findByRol(@PathVariable Long rolId) {
         return ResponseEntity.ok(usuarioRolService.findByRol(rolId));
     }
     
     @PostMapping
-    public ResponseEntity<UsuarioRol> create(@RequestBody UsuarioRol usuarioRol) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioRolService.save(usuarioRol));
+    public ResponseEntity<UsuarioRolResponseDTO> create(@Valid @RequestBody UsuarioRolRequestDTO usuarioRol) {
+        return ResponseEntity.status(201).body(usuarioRolService.save(usuarioRol));
     }
     
     @DeleteMapping("/{id}")

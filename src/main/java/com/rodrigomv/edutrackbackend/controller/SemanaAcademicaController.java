@@ -1,11 +1,12 @@
 package com.rodrigomv.edutrackbackend.controller;
 
-import com.rodrigomv.edutrackbackend.persistence.entity.SemanaAcademica;
+import com.rodrigomv.edutrackbackend.dto.semanaAcademica.SemanaAcademicaRequestDTO;
+import com.rodrigomv.edutrackbackend.dto.semanaAcademica.SemanaAcademicaResponseDTO;
 import com.rodrigomv.edutrackbackend.service.SemanaAcademicaService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -17,29 +18,29 @@ public class SemanaAcademicaController {
     private final SemanaAcademicaService semanaService;
     
     @GetMapping
-    public ResponseEntity<List<SemanaAcademica>> findAll() {
+    public ResponseEntity<List<SemanaAcademicaResponseDTO>> findAll() {
         return ResponseEntity.ok(semanaService.findAll());
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<SemanaAcademica> findById(@PathVariable Long id) {
+    public ResponseEntity<SemanaAcademicaResponseDTO> findById(@PathVariable Long id) {
         return semanaService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/seccion/{seccionId}")
-    public ResponseEntity<List<SemanaAcademica>> findBySeccion(@PathVariable Long seccionId) {
+    public ResponseEntity<List<SemanaAcademicaResponseDTO>> findBySeccion(@PathVariable Long seccionId) {
         return ResponseEntity.ok(semanaService.findBySeccion(seccionId));
     }
     
     @PostMapping
-    public ResponseEntity<SemanaAcademica> create(@RequestBody SemanaAcademica semana) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(semanaService.save(semana));
+    public ResponseEntity<SemanaAcademicaResponseDTO> create(@Valid @RequestBody SemanaAcademicaRequestDTO semana) {
+        return ResponseEntity.status(201).body(semanaService.save(semana));
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<SemanaAcademica> update(@PathVariable Long id, @RequestBody SemanaAcademica semana) {
+    public ResponseEntity<SemanaAcademicaResponseDTO> update(@PathVariable Long id, @Valid @RequestBody SemanaAcademicaRequestDTO semana) {
         return ResponseEntity.ok(semanaService.update(id, semana));
     }
     
