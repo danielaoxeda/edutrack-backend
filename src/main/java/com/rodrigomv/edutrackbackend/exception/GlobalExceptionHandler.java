@@ -2,9 +2,11 @@ package com.rodrigomv.edutrackbackend.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -25,11 +27,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("mensaje", "Error de validación");
-        body.put("errores", ex.getBindingResult().getFieldErrors().stream().collect(LinkedHashMap::new,
+        body.put("mensaje", "Error de validacion");
+        body.put("errores", ex.getBindingResult().getFieldErrors().stream().collect(
+                LinkedHashMap::new,
                 (map, error) -> map.put(error.getField(), error.getDefaultMessage()),
-                Map::putAll));
+                Map::putAll
+        ));
         return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatus(ResponseStatusException ex) {
+        String reason = ex.getReason() != null ? ex.getReason() : "Error de solicitud";
+        return buildResponse(HttpStatus.valueOf(ex.getStatusCode().value()), reason);
     }
 
     @ExceptionHandler(Exception.class)
@@ -43,4 +58,3 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(body);
     }
 }
-
