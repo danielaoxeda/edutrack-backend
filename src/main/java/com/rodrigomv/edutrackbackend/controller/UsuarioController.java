@@ -1,12 +1,13 @@
 package com.rodrigomv.edutrackbackend.controller;
 
-import com.rodrigomv.edutrackbackend.persistence.entity.Usuario;
+import com.rodrigomv.edutrackbackend.dto.usuario.UsuarioRequestDTO;
+import com.rodrigomv.edutrackbackend.dto.usuario.UsuarioResponseDTO;
 import com.rodrigomv.edutrackbackend.persistence.enums.UsuarioEstado;
 import com.rodrigomv.edutrackbackend.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -18,36 +19,36 @@ public class UsuarioController {
     private final UsuarioService usuarioService;
     
     @GetMapping
-    public ResponseEntity<List<Usuario>> findAll() {
+    public ResponseEntity<List<UsuarioResponseDTO>> findAll() {
         return ResponseEntity.ok(usuarioService.findAll());
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Usuario> findById(@PathVariable Long id) {
+    public ResponseEntity<UsuarioResponseDTO> findById(@PathVariable Long id) {
         return usuarioService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/email/{email}")
-    public ResponseEntity<Usuario> findByEmail(@PathVariable String email) {
+    public ResponseEntity<UsuarioResponseDTO> findByEmail(@PathVariable String email) {
         return usuarioService.findByEmail(email)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<Usuario>> findByEstado(@PathVariable UsuarioEstado estado) {
+    public ResponseEntity<List<UsuarioResponseDTO>> findByEstado(@PathVariable UsuarioEstado estado) {
         return ResponseEntity.ok(usuarioService.findByEstado(estado));
     }
     
     @PostMapping
-    public ResponseEntity<Usuario> create(@RequestBody Usuario usuario) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.save(usuario));
+    public ResponseEntity<UsuarioResponseDTO> create(@Valid @RequestBody UsuarioRequestDTO usuario) {
+        return ResponseEntity.status(201).body(usuarioService.save(usuario));
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> update(@PathVariable Long id, @RequestBody Usuario usuario) {
+    public ResponseEntity<UsuarioResponseDTO> update(@PathVariable Long id, @Valid @RequestBody UsuarioRequestDTO usuario) {
         return ResponseEntity.ok(usuarioService.update(id, usuario));
     }
     

@@ -20,8 +20,7 @@ public class UsuarioRequestDTO {
     @Size(max = 120)
     private String email;
 
-    @NotBlank
-    @Size(min = 6, max = 255)
+    @Size(max = 255)
     private String password;
 
     private UsuarioEstado estado;
