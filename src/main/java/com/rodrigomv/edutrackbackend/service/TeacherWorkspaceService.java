@@ -38,17 +38,44 @@ public class TeacherWorkspaceService {
     private final AsistenciaRepository asistenciaRepository;
     private final SemanaAcademicaRepository semanaAcademicaRepository;
     private final SesionClaseRepository sesionClaseRepository;
+    private final CurrentTeacherService currentTeacherService;
 
     @Transactional(readOnly = true)
     public TeacherWorkspaceResponseDTO getWorkspace() {
-        List<Curso> cursos = cursoRepository.findAll();
-        List<Seccion> secciones = seccionRepository.findAll();
-        List<Matricula> matriculas = matriculaRepository.findAll();
-        List<Actividad> actividades = actividadRepository.findAll();
-        List<Entrega> entregas = entregaRepository.findAll();
-        List<Asistencia> asistencias = asistenciaRepository.findAll();
-        List<SemanaAcademica> semanas = semanaAcademicaRepository.findAll();
-        List<SesionClase> sesiones = sesionClaseRepository.findAll();
+        Docente docente = currentTeacherService.getRequiredTeacher();
+        Set<Long> sectionIds = currentTeacherService.getAssignedSectionIds(docente);
+
+        List<Seccion> secciones = seccionRepository.findAll().stream()
+                .filter(seccion -> sectionIds.contains(seccion.getId()))
+                .toList();
+        Set<Long> courseIds = secciones.stream()
+                .map(seccion -> seccion.getCurso().getId())
+                .collect(Collectors.toSet());
+        List<Curso> cursos = cursoRepository.findAll().stream()
+                .filter(curso -> courseIds.contains(curso.getId()))
+                .toList();
+        List<Matricula> matriculas = matriculaRepository.findAll().stream()
+                .filter(matricula -> sectionIds.contains(matricula.getSeccion().getId()))
+                .toList();
+        Set<Long> enrollmentIds = matriculas.stream().map(Matricula::getId).collect(Collectors.toSet());
+        List<SemanaAcademica> semanas = semanaAcademicaRepository.findAll().stream()
+                .filter(semana -> sectionIds.contains(semana.getSeccion().getId()))
+                .toList();
+        Set<Long> weekIds = semanas.stream().map(SemanaAcademica::getId).collect(Collectors.toSet());
+        List<Actividad> actividades = actividadRepository.findAll().stream()
+                .filter(actividad -> weekIds.contains(actividad.getSemanaAcademica().getId()))
+                .toList();
+        Set<Long> activityIds = actividades.stream().map(Actividad::getId).collect(Collectors.toSet());
+        List<Entrega> entregas = entregaRepository.findAll().stream()
+                .filter(entrega -> activityIds.contains(entrega.getActividad().getId())
+                        && enrollmentIds.contains(entrega.getMatricula().getId()))
+                .toList();
+        List<Asistencia> asistencias = asistenciaRepository.findAll().stream()
+                .filter(asistencia -> enrollmentIds.contains(asistencia.getMatricula().getId()))
+                .toList();
+        List<SesionClase> sesiones = sesionClaseRepository.findAll().stream()
+                .filter(sesion -> weekIds.contains(sesion.getSemanaAcademica().getId()))
+                .toList();
 
         Map<Long, List<Seccion>> seccionesPorCurso = secciones.stream()
                 .collect(Collectors.groupingBy(seccion -> seccion.getCurso().getId()));
@@ -101,8 +128,10 @@ public class TeacherWorkspaceService {
 
     @Transactional
     public void saveAttendance(String date, List<TeacherWorkspaceResponseDTO.AttendanceDTO> rows) {
+        Docente docente = currentTeacherService.getRequiredTeacher();
+        Set<Long> sectionIds = currentTeacherService.getAssignedSectionIds(docente);
         LocalDate targetDate = parseDate(date);
-        SesionClase session = findBestSession(targetDate);
+        SesionClase session = findBestSession(targetDate, sectionIds);
         if (session == null) {
             return;
         }
@@ -110,6 +139,7 @@ public class TeacherWorkspaceService {
         for (TeacherWorkspaceResponseDTO.AttendanceDTO row : rows) {
             Matricula matricula = matriculaRepository.findAll().stream()
                     .filter(m -> m.getEstudiante() != null
+                            && sectionIds.contains(m.getSeccion().getId())
                             && m.getEstudiante().getCodigoEstudiante() != null
                             && Objects.equals(m.getEstudiante().getCodigoEstudiante(), row.getCode()))
                     .findFirst()
@@ -567,12 +597,15 @@ public class TeacherWorkspaceService {
         }
     }
 
-    private SesionClase findBestSession(LocalDate date) {
-        List<SesionClase> exact = sesionClaseRepository.findByFecha(date);
+    private SesionClase findBestSession(LocalDate date, Set<Long> sectionIds) {
+        List<SesionClase> exact = sesionClaseRepository.findByFecha(date).stream()
+                .filter(session -> sectionIds.contains(session.getSemanaAcademica().getSeccion().getId()))
+                .toList();
         if (!exact.isEmpty()) {
             return exact.get(0);
         }
         return sesionClaseRepository.findAll().stream()
+                .filter(session -> sectionIds.contains(session.getSemanaAcademica().getSeccion().getId()))
                 .max(Comparator.comparing(SesionClase::getFecha))
                 .orElse(null);
     }
