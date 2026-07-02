@@ -1,11 +1,12 @@
 package com.rodrigomv.edutrackbackend.controller;
 
-import com.rodrigomv.edutrackbackend.persistence.entity.Curso;
+import com.rodrigomv.edutrackbackend.dto.curso.CursoRequestDTO;
+import com.rodrigomv.edutrackbackend.dto.curso.CursoResponseDTO;
 import com.rodrigomv.edutrackbackend.service.CursoService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -17,31 +18,31 @@ public class CursoController {
     private final CursoService cursoService;
     
     @GetMapping
-    public ResponseEntity<List<Curso>> findAll() {
+    public ResponseEntity<List<CursoResponseDTO>> findAll() {
         return ResponseEntity.ok(cursoService.findAll());
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Curso> findById(@PathVariable Long id) {
+    public ResponseEntity<CursoResponseDTO> findById(@PathVariable Long id) {
         return cursoService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/codigo/{codigo}")
-    public ResponseEntity<Curso> findByCodigo(@PathVariable String codigo) {
+    public ResponseEntity<CursoResponseDTO> findByCodigo(@PathVariable String codigo) {
         return cursoService.findByCodigo(codigo)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @PostMapping
-    public ResponseEntity<Curso> create(@RequestBody Curso curso) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(cursoService.save(curso));
+    public ResponseEntity<CursoResponseDTO> create(@Valid @RequestBody CursoRequestDTO curso) {
+        return ResponseEntity.status(201).body(cursoService.save(curso));
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Curso> update(@PathVariable Long id, @RequestBody Curso curso) {
+    public ResponseEntity<CursoResponseDTO> update(@PathVariable Long id, @Valid @RequestBody CursoRequestDTO curso) {
         return ResponseEntity.ok(cursoService.update(id, curso));
     }
     

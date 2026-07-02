@@ -1,12 +1,13 @@
 package com.rodrigomv.edutrackbackend.controller;
 
-import com.rodrigomv.edutrackbackend.persistence.entity.PeriodoAcademico;
+import com.rodrigomv.edutrackbackend.dto.periodoAcademico.PeriodoAcademicoRequestDTO;
+import com.rodrigomv.edutrackbackend.dto.periodoAcademico.PeriodoAcademicoResponseDTO;
 import com.rodrigomv.edutrackbackend.persistence.enums.PeriodoEstado;
 import com.rodrigomv.edutrackbackend.service.PeriodoAcademicoService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -18,43 +19,43 @@ public class PeriodoAcademicoController {
     private final PeriodoAcademicoService periodoService;
     
     @GetMapping
-    public ResponseEntity<List<PeriodoAcademico>> findAll() {
+    public ResponseEntity<List<PeriodoAcademicoResponseDTO>> findAll() {
         return ResponseEntity.ok(periodoService.findAll());
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<PeriodoAcademico> findById(@PathVariable Long id) {
+    public ResponseEntity<PeriodoAcademicoResponseDTO> findById(@PathVariable Long id) {
         return periodoService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/nombre/{nombre}")
-    public ResponseEntity<PeriodoAcademico> findByNombre(@PathVariable String nombre) {
+    public ResponseEntity<PeriodoAcademicoResponseDTO> findByNombre(@PathVariable String nombre) {
         return periodoService.findByNombre(nombre)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<PeriodoAcademico>> findByEstado(@PathVariable PeriodoEstado estado) {
+    public ResponseEntity<List<PeriodoAcademicoResponseDTO>> findByEstado(@PathVariable PeriodoEstado estado) {
         return ResponseEntity.ok(periodoService.findByEstado(estado));
     }
     
     @GetMapping("/activo")
-    public ResponseEntity<PeriodoAcademico> findActivo() {
+    public ResponseEntity<PeriodoAcademicoResponseDTO> findActivo() {
         return periodoService.findActivo()
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @PostMapping
-    public ResponseEntity<PeriodoAcademico> create(@RequestBody PeriodoAcademico periodo) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(periodoService.save(periodo));
+    public ResponseEntity<PeriodoAcademicoResponseDTO> create(@Valid @RequestBody PeriodoAcademicoRequestDTO periodo) {
+        return ResponseEntity.status(201).body(periodoService.save(periodo));
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<PeriodoAcademico> update(@PathVariable Long id, @RequestBody PeriodoAcademico periodo) {
+    public ResponseEntity<PeriodoAcademicoResponseDTO> update(@PathVariable Long id, @Valid @RequestBody PeriodoAcademicoRequestDTO periodo) {
         return ResponseEntity.ok(periodoService.update(id, periodo));
     }
     

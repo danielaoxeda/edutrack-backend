@@ -1,5 +1,7 @@
 package com.rodrigomv.edutrackbackend.controller;
 
+import com.rodrigomv.edutrackbackend.dto.entrega.EntregaRequestDTO;
+import com.rodrigomv.edutrackbackend.dto.entrega.EntregaResponseDTO;
 import com.rodrigomv.edutrackbackend.persistence.entity.Entrega;
 import com.rodrigomv.edutrackbackend.persistence.enums.EntregaEstado;
 import com.rodrigomv.edutrackbackend.service.EntregaService;
@@ -7,10 +9,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -24,34 +26,34 @@ public class EntregaController {
     private final EntregaService entregaService;
     
     @GetMapping
-    public ResponseEntity<List<Entrega>> findAll() {
+    public ResponseEntity<List<EntregaResponseDTO>> findAll() {
         return ResponseEntity.ok(entregaService.findAll());
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Entrega> findById(@PathVariable Long id) {
+    public ResponseEntity<EntregaResponseDTO> findById(@PathVariable Long id) {
         return entregaService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/actividad/{actividadId}")
-    public ResponseEntity<List<Entrega>> findByActividad(@PathVariable Long actividadId) {
+    public ResponseEntity<List<EntregaResponseDTO>> findByActividad(@PathVariable Long actividadId) {
         return ResponseEntity.ok(entregaService.findByActividad(actividadId));
     }
     
     @GetMapping("/matricula/{matriculaId}")
-    public ResponseEntity<List<Entrega>> findByMatricula(@PathVariable Long matriculaId) {
+    public ResponseEntity<List<EntregaResponseDTO>> findByMatricula(@PathVariable Long matriculaId) {
         return ResponseEntity.ok(entregaService.findByMatricula(matriculaId));
     }
     
     @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<Entrega>> findByEstado(@PathVariable EntregaEstado estado) {
+    public ResponseEntity<List<EntregaResponseDTO>> findByEstado(@PathVariable EntregaEstado estado) {
         return ResponseEntity.ok(entregaService.findByEstado(estado));
     }
     
     @GetMapping("/actividad/{actividadId}/matricula/{matriculaId}")
-    public ResponseEntity<Entrega> findByActividadAndMatricula(
+    public ResponseEntity<EntregaResponseDTO> findByActividadAndMatricula(
             @PathVariable Long actividadId, @PathVariable Long matriculaId) {
         return entregaService.findByActividadAndMatricula(actividadId, matriculaId)
                 .map(ResponseEntity::ok)
@@ -59,12 +61,12 @@ public class EntregaController {
     }
     
     @PostMapping
-    public ResponseEntity<Entrega> create(@RequestBody Entrega entrega) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(entregaService.save(entrega));
+    public ResponseEntity<EntregaResponseDTO> create(@Valid @RequestBody EntregaRequestDTO entrega) {
+        return ResponseEntity.status(201).body(entregaService.save(entrega));
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Entrega> update(@PathVariable Long id, @RequestBody Entrega entrega) {
+    public ResponseEntity<EntregaResponseDTO> update(@PathVariable Long id, @Valid @RequestBody EntregaRequestDTO entrega) {
         return ResponseEntity.ok(entregaService.update(id, entrega));
     }
     
@@ -83,7 +85,7 @@ public class EntregaController {
             @PathVariable Long id,
             @RequestBody CalificarRequest request
     ) {
-        Entrega entrega = entregaService.findById(id)
+        Entrega entrega = entregaService.findEntityById(id)
                 .orElseThrow(() -> new RuntimeException("Entrega no encontrada"));
 
         // Validar nota
@@ -99,7 +101,7 @@ public class EntregaController {
         entrega.setComentarioDocente(request.getComentario());
         entrega.setEstado(EntregaEstado.CALIFICADO);
 
-        Entrega saved = entregaService.update(id, entrega);
+        Entrega saved = entregaService.updateEntity(id, entrega);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Entrega calificada exitosamente",

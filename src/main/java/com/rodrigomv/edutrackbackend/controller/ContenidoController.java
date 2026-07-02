@@ -1,12 +1,13 @@
 package com.rodrigomv.edutrackbackend.controller;
 
-import com.rodrigomv.edutrackbackend.persistence.entity.Contenido;
+import com.rodrigomv.edutrackbackend.dto.contenido.ContenidoRequestDTO;
+import com.rodrigomv.edutrackbackend.dto.contenido.ContenidoResponseDTO;
 import com.rodrigomv.edutrackbackend.persistence.enums.ContenidoTipo;
 import com.rodrigomv.edutrackbackend.service.ContenidoService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -18,39 +19,39 @@ public class ContenidoController {
     private final ContenidoService contenidoService;
     
     @GetMapping
-    public ResponseEntity<List<Contenido>> findAll() {
+    public ResponseEntity<List<ContenidoResponseDTO>> findAll() {
         return ResponseEntity.ok(contenidoService.findAll());
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Contenido> findById(@PathVariable Long id) {
+    public ResponseEntity<ContenidoResponseDTO> findById(@PathVariable Long id) {
         return contenidoService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/semana/{semanaId}")
-    public ResponseEntity<List<Contenido>> findBySemana(@PathVariable Long semanaId) {
+    public ResponseEntity<List<ContenidoResponseDTO>> findBySemana(@PathVariable Long semanaId) {
         return ResponseEntity.ok(contenidoService.findBySemana(semanaId));
     }
     
     @GetMapping("/tipo/{tipo}")
-    public ResponseEntity<List<Contenido>> findByTipo(@PathVariable ContenidoTipo tipo) {
+    public ResponseEntity<List<ContenidoResponseDTO>> findByTipo(@PathVariable ContenidoTipo tipo) {
         return ResponseEntity.ok(contenidoService.findByTipo(tipo));
     }
     
     @GetMapping("/visibles")
-    public ResponseEntity<List<Contenido>> findVisibles() {
+    public ResponseEntity<List<ContenidoResponseDTO>> findVisibles() {
         return ResponseEntity.ok(contenidoService.findVisibles());
     }
     
     @PostMapping
-    public ResponseEntity<Contenido> create(@RequestBody Contenido contenido) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(contenidoService.save(contenido));
+    public ResponseEntity<ContenidoResponseDTO> create(@Valid @RequestBody ContenidoRequestDTO contenido) {
+        return ResponseEntity.status(201).body(contenidoService.save(contenido));
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Contenido> update(@PathVariable Long id, @RequestBody Contenido contenido) {
+    public ResponseEntity<ContenidoResponseDTO> update(@PathVariable Long id, @Valid @RequestBody ContenidoRequestDTO contenido) {
         return ResponseEntity.ok(contenidoService.update(id, contenido));
     }
     

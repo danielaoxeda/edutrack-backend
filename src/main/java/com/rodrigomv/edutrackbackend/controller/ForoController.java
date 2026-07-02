@@ -1,11 +1,12 @@
 package com.rodrigomv.edutrackbackend.controller;
 
-import com.rodrigomv.edutrackbackend.persistence.entity.Foro;
+import com.rodrigomv.edutrackbackend.dto.foro.ForoRequestDTO;
+import com.rodrigomv.edutrackbackend.dto.foro.ForoResponseDTO;
 import com.rodrigomv.edutrackbackend.service.ForoService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -17,34 +18,34 @@ public class ForoController {
     private final ForoService foroService;
     
     @GetMapping
-    public ResponseEntity<List<Foro>> findAll() {
+    public ResponseEntity<List<ForoResponseDTO>> findAll() {
         return ResponseEntity.ok(foroService.findAll());
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Foro> findById(@PathVariable Long id) {
+    public ResponseEntity<ForoResponseDTO> findById(@PathVariable Long id) {
         return foroService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/semana/{semanaId}")
-    public ResponseEntity<List<Foro>> findBySemana(@PathVariable Long semanaId) {
+    public ResponseEntity<List<ForoResponseDTO>> findBySemana(@PathVariable Long semanaId) {
         return ResponseEntity.ok(foroService.findBySemana(semanaId));
     }
     
     @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<Foro>> findByUsuario(@PathVariable Long usuarioId) {
+    public ResponseEntity<List<ForoResponseDTO>> findByUsuario(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(foroService.findByUsuario(usuarioId));
     }
     
     @PostMapping
-    public ResponseEntity<Foro> create(@RequestBody Foro foro) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(foroService.save(foro));
+    public ResponseEntity<ForoResponseDTO> create(@Valid @RequestBody ForoRequestDTO foro) {
+        return ResponseEntity.status(201).body(foroService.save(foro));
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Foro> update(@PathVariable Long id, @RequestBody Foro foro) {
+    public ResponseEntity<ForoResponseDTO> update(@PathVariable Long id, @Valid @RequestBody ForoRequestDTO foro) {
         return ResponseEntity.ok(foroService.update(id, foro));
     }
     

@@ -1,11 +1,12 @@
 package com.rodrigomv.edutrackbackend.controller;
 
-import com.rodrigomv.edutrackbackend.persistence.entity.RolPermiso;
+import com.rodrigomv.edutrackbackend.dto.rolPermiso.RolPermisoRequestDTO;
+import com.rodrigomv.edutrackbackend.dto.rolPermiso.RolPermisoResponseDTO;
 import com.rodrigomv.edutrackbackend.service.RolPermisoService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -17,30 +18,30 @@ public class RolPermisoController {
     private final RolPermisoService rolPermisoService;
     
     @GetMapping
-    public ResponseEntity<List<RolPermiso>> findAll() {
+    public ResponseEntity<List<RolPermisoResponseDTO>> findAll() {
         return ResponseEntity.ok(rolPermisoService.findAll());
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<RolPermiso> findById(@PathVariable Long id) {
+    public ResponseEntity<RolPermisoResponseDTO> findById(@PathVariable Long id) {
         return rolPermisoService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/rol/{rolId}")
-    public ResponseEntity<List<RolPermiso>> findByRol(@PathVariable Long rolId) {
+    public ResponseEntity<List<RolPermisoResponseDTO>> findByRol(@PathVariable Long rolId) {
         return ResponseEntity.ok(rolPermisoService.findByRol(rolId));
     }
     
     @GetMapping("/permiso/{permisoId}")
-    public ResponseEntity<List<RolPermiso>> findByPermiso(@PathVariable Long permisoId) {
+    public ResponseEntity<List<RolPermisoResponseDTO>> findByPermiso(@PathVariable Long permisoId) {
         return ResponseEntity.ok(rolPermisoService.findByPermiso(permisoId));
     }
     
     @PostMapping
-    public ResponseEntity<RolPermiso> create(@RequestBody RolPermiso rolPermiso) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(rolPermisoService.save(rolPermiso));
+    public ResponseEntity<RolPermisoResponseDTO> create(@Valid @RequestBody RolPermisoRequestDTO rolPermiso) {
+        return ResponseEntity.status(201).body(rolPermisoService.save(rolPermiso));
     }
     
     @DeleteMapping("/{id}")

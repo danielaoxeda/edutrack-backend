@@ -1,13 +1,14 @@
 package com.rodrigomv.edutrackbackend.controller;
 
-import com.rodrigomv.edutrackbackend.persistence.entity.Asistencia;
+import com.rodrigomv.edutrackbackend.dto.asistencia.AsistenciaRequestDTO;
+import com.rodrigomv.edutrackbackend.dto.asistencia.AsistenciaResponseDTO;
 import com.rodrigomv.edutrackbackend.persistence.enums.AsistenciaEstado;
 import com.rodrigomv.edutrackbackend.service.AsistenciaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,34 +21,34 @@ public class AsistenciaController {
     private final AsistenciaService asistenciaService;
     
     @GetMapping
-    public ResponseEntity<List<Asistencia>> findAll() {
+    public ResponseEntity<List<AsistenciaResponseDTO>> findAll() {
         return ResponseEntity.ok(asistenciaService.findAll());
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Asistencia> findById(@PathVariable Long id) {
+    public ResponseEntity<AsistenciaResponseDTO> findById(@PathVariable Long id) {
         return asistenciaService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/sesion/{sesionId}")
-    public ResponseEntity<List<Asistencia>> findBySesion(@PathVariable Long sesionId) {
+    public ResponseEntity<List<AsistenciaResponseDTO>> findBySesion(@PathVariable Long sesionId) {
         return ResponseEntity.ok(asistenciaService.findBySesion(sesionId));
     }
     
     @GetMapping("/matricula/{matriculaId}")
-    public ResponseEntity<List<Asistencia>> findByMatricula(@PathVariable Long matriculaId) {
+    public ResponseEntity<List<AsistenciaResponseDTO>> findByMatricula(@PathVariable Long matriculaId) {
         return ResponseEntity.ok(asistenciaService.findByMatricula(matriculaId));
     }
     
     @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<Asistencia>> findByEstado(@PathVariable AsistenciaEstado estado) {
+    public ResponseEntity<List<AsistenciaResponseDTO>> findByEstado(@PathVariable AsistenciaEstado estado) {
         return ResponseEntity.ok(asistenciaService.findByEstado(estado));
     }
     
     @GetMapping("/sesion/{sesionId}/matricula/{matriculaId}")
-    public ResponseEntity<Asistencia> findBySesionAndMatricula(
+    public ResponseEntity<AsistenciaResponseDTO> findBySesionAndMatricula(
             @PathVariable Long sesionId, @PathVariable Long matriculaId) {
         return asistenciaService.findBySesionAndMatricula(sesionId, matriculaId)
                 .map(ResponseEntity::ok)
@@ -55,12 +56,12 @@ public class AsistenciaController {
     }
     
     @PostMapping
-    public ResponseEntity<Asistencia> create(@RequestBody Asistencia asistencia) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(asistenciaService.save(asistencia));
+    public ResponseEntity<AsistenciaResponseDTO> create(@Valid @RequestBody AsistenciaRequestDTO asistencia) {
+        return ResponseEntity.status(201).body(asistenciaService.save(asistencia));
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Asistencia> update(@PathVariable Long id, @RequestBody Asistencia asistencia) {
+    public ResponseEntity<AsistenciaResponseDTO> update(@PathVariable Long id, @Valid @RequestBody AsistenciaRequestDTO asistencia) {
         return ResponseEntity.ok(asistenciaService.update(id, asistencia));
     }
     
