@@ -9,7 +9,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,7 +25,6 @@ import java.util.List;
 public class DataSeeder {
 
     // ==================== REPOSITORIES ====================
-    private final PasswordEncoder passwordEncoder;
     private final RolRepository rolRepository;
     private final PermisoRepository permisoRepository;
     private final RolPermisoRepository rolPermisoRepository;
@@ -48,34 +46,15 @@ public class DataSeeder {
     private final NotificacionRepository notificacionRepository;
 
     @Bean
+    @Profile({"dev", "seed"})
     public CommandLineRunner seedData() {
         return args -> {
-            log.info("=== INICIANDO DATA SEEDER ===");
-            
-            // Limpiar datos existentes
             if (usuarioRepository.count() > 0) {
-                log.info("Limpiando datos existentes...");
-                notificacionRepository.deleteAll();
-                entregaRepository.deleteAll();
-                actividadRepository.deleteAll();
-                asistenciaRepository.deleteAll();
-                matriculaRepository.deleteAll();
-                sesionRepository.deleteAll();
-                semanaRepository.deleteAll();
-                docenteSeccionRepository.deleteAll();
-                criterioRepository.deleteAll();
-                seccionRepository.deleteAll();
-                estudianteRepository.deleteAll();
-                docenteRepository.deleteAll();
-                periodoRepository.deleteAll();
-                cursoRepository.deleteAll();
-                usuarioRolRepository.deleteAll();
-                usuarioRepository.deleteAll();
-                rolPermisoRepository.deleteAll();
-                rolRepository.deleteAll();
-                permisoRepository.deleteAll();
-                log.info("Datos limpios.");
+                log.info("Base de datos ya tiene datos. Saltando seeder.");
+                return;
             }
+
+            log.info("=== INICIANDO DATA SEEDER ===");
 
             // 1. ROLES
             log.info("Creando roles...");
@@ -391,20 +370,28 @@ public class DataSeeder {
     // ==================== HELPER METHODS ====================
 
     private Rol createRol(String nombre) {
-        Rol rol = new Rol();
-        rol.setNombre(nombre);
-        return rolRepository.save(rol);
+        return rolRepository.findByNombre(nombre).orElseGet(() -> {
+            Rol rol = new Rol();
+            rol.setNombre(nombre);
+            return rolRepository.save(rol);
+        });
     }
 
     private Permiso createPermiso(String recurso, String accion) {
-        Permiso permiso = new Permiso();
-        permiso.setNombre(recurso + ":" + accion);
-        permiso.setRecurso(recurso);
-        permiso.setAccion(accion);
-        return permisoRepository.save(permiso);
+        String nombre = recurso + "." + accion;
+        return permisoRepository.findByNombre(nombre).orElseGet(() -> {
+            Permiso permiso = new Permiso();
+            permiso.setNombre(nombre);
+            permiso.setRecurso(recurso);
+            permiso.setAccion(accion);
+            return permisoRepository.save(permiso);
+        });
     }
 
     private void createRolPermiso(Rol rol, Permiso permiso) {
+        if (rolPermisoRepository.existsByRolIdAndPermisoId(rol.getId(), permiso.getId())) {
+            return;
+        }
         RolPermiso rp = new RolPermiso();
         rp.setRol(rol);
         rp.setPermiso(permiso);
@@ -416,7 +403,7 @@ public class DataSeeder {
         u.setNombres(nombres);
         u.setApellidos(apellidos);
         u.setEmail(email);
-        u.setPasswordHash(passwordEncoder.encode(password)); // BCrypt hash
+        u.setPasswordHash(password); // En produccion usar BCrypt
         u.setEstado(estado);
         u.setCreatedAt(LocalDateTime.now());
         return usuarioRepository.save(u);

@@ -10,6 +10,10 @@ import java.util.Optional;
 public interface DocenteRepository extends JpaRepository<Docente, Long> {
     
     Optional<Docente> findByCodigoDocente(String codigoDocente);
+
+    Optional<Docente> findByUsuarioId(Long usuarioId);
     
     boolean existsByCodigoDocente(String codigoDocente);
+
+    boolean existsByUsuarioId(Long usuarioId);
 }

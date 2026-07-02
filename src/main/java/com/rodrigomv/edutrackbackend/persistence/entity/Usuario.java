@@ -1,6 +1,7 @@
 package com.rodrigomv.edutrackbackend.persistence.entity;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,7 @@ public class Usuario {
     @Column(name = "email", length = 120, nullable = false, unique = true)
     private String email;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "password_hash", length = 255, nullable = false)
     private String passwordHash;
 
