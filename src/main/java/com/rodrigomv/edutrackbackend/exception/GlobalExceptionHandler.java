@@ -3,6 +3,7 @@ package com.rodrigomv.edutrackbackend.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -39,6 +40,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex) {
         return buildResponse(HttpStatus.UNAUTHORIZED, "El correo o la contrasena son incorrectos");
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<Map<String, Object>> handleDisabledAccount(DisabledException ex) {
+        return buildResponse(HttpStatus.FORBIDDEN, "La cuenta esta deshabilitada. Contacta al administrador");
     }
 
     @ExceptionHandler(ResponseStatusException.class)

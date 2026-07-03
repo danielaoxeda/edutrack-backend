@@ -57,6 +57,7 @@ public record AdminOverviewResponseDTO(
             String fullName,
             String email,
             String codigoEstudiante,
+            UsuarioEstado estado,
             EstadoAcademico estadoAcademico,
             int enrollmentCount
     ) {

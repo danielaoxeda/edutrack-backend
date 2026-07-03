@@ -1,6 +1,7 @@
 package com.rodrigomv.edutrackbackend.service;
 
 import com.rodrigomv.edutrackbackend.dto.admin.AdminOverviewResponseDTO;
+import com.rodrigomv.edutrackbackend.dto.admin.UserStatusRequestDTO;
 import com.rodrigomv.edutrackbackend.dto.docente.DocenteRequestDTO;
 import com.rodrigomv.edutrackbackend.dto.docente.DocenteResponseDTO;
 import com.rodrigomv.edutrackbackend.dto.estudiante.EstudianteRequestDTO;
@@ -15,6 +16,7 @@ import com.rodrigomv.edutrackbackend.persistence.entity.PeriodoAcademico;
 import com.rodrigomv.edutrackbackend.persistence.entity.Rol;
 import com.rodrigomv.edutrackbackend.persistence.entity.Seccion;
 import com.rodrigomv.edutrackbackend.persistence.entity.Usuario;
+import com.rodrigomv.edutrackbackend.persistence.enums.UsuarioEstado;
 import com.rodrigomv.edutrackbackend.persistence.repository.CursoRepository;
 import com.rodrigomv.edutrackbackend.persistence.repository.DocenteRepository;
 import com.rodrigomv.edutrackbackend.persistence.repository.DocenteSeccionRepository;
@@ -118,6 +120,7 @@ public class AdminService {
                         estudiante.getUsuario() != null ? buildFullName(estudiante.getUsuario().getNombres(), estudiante.getUsuario().getApellidos()) : estudiante.getCodigoEstudiante(),
                         estudiante.getUsuario() != null ? estudiante.getUsuario().getEmail() : null,
                         estudiante.getCodigoEstudiante(),
+                        estudiante.getUsuario() != null ? estudiante.getUsuario().getEstado() : null,
                         estudiante.getEstadoAcademico(),
                         estudiante.getMatriculas() != null ? estudiante.getMatriculas().size() : 0
                 ))
@@ -221,6 +224,46 @@ public class AdminService {
             ensureRole(estudiante.usuario().getId(), "ESTUDIANTE");
         }
         return estudiante;
+    }
+
+    public void updateTeacherStatus(Long docenteId, UserStatusRequestDTO request) {
+        Docente docente = docenteRepository.findById(docenteId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profesor no encontrado"));
+        validateSupportedStatus(request.estado());
+
+        if (request.estado() == UsuarioEstado.INACTIVO && docenteSeccionRepository.existsByDocenteId(docenteId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede deshabilitar al profesor porque tiene secciones asignadas");
+        }
+
+        updateUserStatus(docente.getUsuario(), request.estado());
+    }
+
+    public void updateStudentStatus(Long estudianteId, UserStatusRequestDTO request) {
+        Estudiante estudiante = estudianteRepository.findById(estudianteId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado"));
+        validateSupportedStatus(request.estado());
+
+        if (request.estado() == UsuarioEstado.INACTIVO && matriculaRepository.existsByEstudianteId(estudianteId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No se puede deshabilitar al alumno porque tiene matriculas registradas");
+        }
+
+        updateUserStatus(estudiante.getUsuario(), request.estado());
+    }
+
+    private void validateSupportedStatus(UsuarioEstado estado) {
+        if (estado != UsuarioEstado.ACTIVO && estado != UsuarioEstado.INACTIVO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El estado debe ser ACTIVO o INACTIVO");
+        }
+    }
+
+    private void updateUserStatus(Usuario usuario, UsuarioEstado estado) {
+        if (usuario == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El perfil no tiene una cuenta asociada");
+        }
+        usuario.setEstado(estado);
+        usuarioRepository.save(usuario);
     }
 
     private void ensureRole(Long usuarioId, String roleName) {

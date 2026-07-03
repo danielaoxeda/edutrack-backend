@@ -17,4 +17,6 @@ public interface DocenteSeccionRepository extends JpaRepository<DocenteSeccion, 
     Optional<DocenteSeccion> findByDocenteIdAndSeccionId(Long docenteId, Long seccionId);
     
     boolean existsByDocenteIdAndSeccionId(Long docenteId, Long seccionId);
+
+    boolean existsByDocenteId(Long docenteId);
 }

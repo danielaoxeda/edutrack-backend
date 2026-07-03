@@ -1,6 +1,7 @@
 package com.rodrigomv.edutrackbackend.controller;
 
 import com.rodrigomv.edutrackbackend.dto.admin.AdminOverviewResponseDTO;
+import com.rodrigomv.edutrackbackend.dto.admin.UserStatusRequestDTO;
 import com.rodrigomv.edutrackbackend.dto.docente.DocenteRequestDTO;
 import com.rodrigomv.edutrackbackend.dto.docente.DocenteResponseDTO;
 import com.rodrigomv.edutrackbackend.dto.estudiante.EstudianteRequestDTO;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,5 +38,23 @@ public class AdminController {
     @PostMapping("/estudiantes")
     public ResponseEntity<EstudianteResponseDTO> createStudent(@Valid @RequestBody EstudianteRequestDTO request) {
         return ResponseEntity.status(201).body(adminService.createStudent(request));
+    }
+
+    @PatchMapping("/docentes/{docenteId}/estado")
+    public ResponseEntity<Void> updateTeacherStatus(
+            @PathVariable Long docenteId,
+            @Valid @RequestBody UserStatusRequestDTO request
+    ) {
+        adminService.updateTeacherStatus(docenteId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/estudiantes/{estudianteId}/estado")
+    public ResponseEntity<Void> updateStudentStatus(
+            @PathVariable Long estudianteId,
+            @Valid @RequestBody UserStatusRequestDTO request
+    ) {
+        adminService.updateStudentStatus(estudianteId, request);
+        return ResponseEntity.noContent().build();
     }
 }

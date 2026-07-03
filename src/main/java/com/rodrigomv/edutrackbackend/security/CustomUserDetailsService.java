@@ -31,10 +31,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         Usuario usuario = usuarioRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
 
-        if (usuario.getEstado() != UsuarioEstado.ACTIVO) {
-            throw new UsernameNotFoundException("Usuario inactivo o bloqueado");
-        }
-
         List<GrantedAuthority> authorities = new ArrayList<>();
         for (UsuarioRol usuarioRol : usuario.getUsuarioRoles()) {
             String roleName = normalizeRole(usuarioRol.getRol() != null ? usuarioRol.getRol().getNombre() : null);
@@ -53,7 +49,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .accountExpired(false)
                 .accountLocked(false)
                 .credentialsExpired(false)
-                .disabled(false)
+                .disabled(usuario.getEstado() != UsuarioEstado.ACTIVO)
                 .build();
     }
 
