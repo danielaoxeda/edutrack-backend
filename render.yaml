@@ -18,3 +18,9 @@ services:
         value: https://edutrackpe.vercel.app
       - key: SPRING_PROFILES_ACTIVE
         value: default
+      - key: HIBERNATE_DDL_AUTO
+        value: validate
+      - key: ADMIN_BOOTSTRAP_EMAIL
+        sync: false
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false
