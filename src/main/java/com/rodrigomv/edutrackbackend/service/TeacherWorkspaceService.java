@@ -167,17 +167,29 @@ public class TeacherWorkspaceService {
 
     private List<TeacherWorkspaceResponseDTO.StatDTO> buildStudentStats(List<TeacherWorkspaceResponseDTO.StudentDTO> students) {
         long total = students.size();
-        long active = students.stream().filter(s -> "regular".equalsIgnoreCase(s.getStatus()) || "sobresaliente".equalsIgnoreCase(s.getStatus())).count();
+        long active = students.stream().filter(s -> !"riesgo".equalsIgnoreCase(s.getStatus())).count();
         long risk = students.stream().filter(s -> "riesgo".equalsIgnoreCase(s.getStatus())).count();
-        double avgGrade = students.stream().mapToDouble(TeacherWorkspaceResponseDTO.StudentDTO::getAverageGrade).average().orElse(0.0);
-        double avgAttendance = students.stream().mapToInt(TeacherWorkspaceResponseDTO.StudentDTO::getAttendance).average().orElse(0.0);
+        var gradedStudents = students.stream()
+                .map(TeacherWorkspaceResponseDTO.StudentDTO::getAverageGrade)
+                .filter(Objects::nonNull)
+                .toList();
+        Double avgGrade = gradedStudents.isEmpty()
+                ? null
+                : gradedStudents.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        var attendanceValues = students.stream()
+                .map(TeacherWorkspaceResponseDTO.StudentDTO::getAttendance)
+                .filter(Objects::nonNull)
+                .toList();
+        Double avgAttendance = attendanceValues.isEmpty()
+                ? null
+                : attendanceValues.stream().mapToInt(Integer::intValue).average().orElse(0.0);
 
         return List.of(
                 new TeacherWorkspaceResponseDTO.StatDTO("Total Estudiantes", total, null, "Users"),
                 new TeacherWorkspaceResponseDTO.StatDTO("Activos", active, "en seguimiento", "CheckCircle2"),
                 new TeacherWorkspaceResponseDTO.StatDTO("En Riesgo", risk, "requieren atención", "AlertTriangle"),
-                new TeacherWorkspaceResponseDTO.StatDTO("Promedio General", format1(avgGrade), "/ 5.0", "TrendingUp"),
-                new TeacherWorkspaceResponseDTO.StatDTO("Asistencia Promedio", formatPercent(avgAttendance), null, "CalendarCheck")
+                new TeacherWorkspaceResponseDTO.StatDTO("Promedio General", avgGrade == null ? "Sin notas" : format1(avgGrade), avgGrade == null ? null : "/ 5.0", "TrendingUp"),
+                new TeacherWorkspaceResponseDTO.StatDTO("Asistencia Promedio", avgAttendance == null ? "Sin registros" : formatPercent(avgAttendance), null, "CalendarCheck")
         );
     }
 
@@ -208,20 +220,29 @@ public class TeacherWorkspaceService {
                     .flatMap(m -> asistenciasPorMatricula.getOrDefault(m.getId(), List.of()).stream())
                     .collect(Collectors.toList());
 
-            double averageGrade = studentEntregas.stream()
+            Double averageGrade = studentEntregas.stream()
                     .map(Entrega::getNota)
                     .filter(Objects::nonNull)
                     .map(BigDecimal::doubleValue)
                     .mapToDouble(Double::doubleValue)
                     .average()
-                    .orElse(safeAverage(studentMatriculas));
+                    .stream()
+                    .boxed()
+                    .findFirst()
+                    .orElse(null);
 
-            int attendance = (int) Math.round(studentAsistencias.stream()
+            Integer attendance = studentAsistencias.isEmpty() ? null : (int) Math.round(studentAsistencias.stream()
                     .mapToInt(a -> a.getEstado() == AsistenciaEstado.PRESENTE ? 100 : a.getEstado() == AsistenciaEstado.TARDE ? 75 : 0)
                     .average()
-                    .orElse(92.0));
+                    .orElse(0.0));
 
-            String status = averageGrade < 3.0 || attendance < 75 ? "riesgo" : averageGrade >= 4.5 && attendance >= 90 ? "sobresaliente" : "regular";
+            String status = attendance != null && attendance < 75
+                    ? "riesgo"
+                    : averageGrade == null
+                    ? "sin_evaluacion"
+                    : averageGrade < 3.0
+                    ? "riesgo"
+                    : averageGrade >= 4.5 && (attendance == null || attendance >= 90) ? "sobresaliente" : "regular";
 
             students.add(new TeacherWorkspaceResponseDTO.StudentDTO(
                     "stu-" + estudiante.getId(),
@@ -230,7 +251,7 @@ public class TeacherWorkspaceService {
                     estudiante.getCodigoEstudiante(),
                     representative.getSeccion().getCurso().getNombre(),
                     representative.getSeccion().getNombre(),
-                    round1(averageGrade),
+                    averageGrade == null ? null : round1(averageGrade),
                     attendance,
                     status
             ));
@@ -245,7 +266,7 @@ public class TeacherWorkspaceService {
         List<TeacherWorkspaceResponseDTO.StudentAlertDTO> alerts = new ArrayList<>();
 
         students.stream()
-                .filter(s -> s.getAttendance() < 75)
+                .filter(s -> s.getAttendance() != null && s.getAttendance() < 75)
                 .limit(1)
                 .forEach(s -> alerts.add(new TeacherWorkspaceResponseDTO.StudentAlertDTO(
                         "sa-att-" + s.getCode(),
@@ -258,7 +279,7 @@ public class TeacherWorkspaceService {
                 )));
 
         students.stream()
-                .filter(s -> s.getAverageGrade() < 3.0)
+                .filter(s -> s.getAverageGrade() != null && s.getAverageGrade() < 3.0)
                 .limit(1)
                 .forEach(s -> alerts.add(new TeacherWorkspaceResponseDTO.StudentAlertDTO(
                         "sa-grade-" + s.getCode(),
@@ -279,18 +300,6 @@ public class TeacherWorkspaceService {
                     "Hay actividades sin entregar o pendientes de revisión.",
                     "Pendientes",
                     overdueTasks + " tareas",
-                    "homework"
-            ));
-        }
-
-        if (alerts.isEmpty()) {
-            alerts.add(new TeacherWorkspaceResponseDTO.StudentAlertDTO(
-                    "sa-default",
-                    "Sin alertas",
-                    "Hoy",
-                    "Todo el grupo se encuentra dentro de parámetros normales.",
-                    "Estado",
-                    "OK",
                     "homework"
             ));
         }
@@ -320,16 +329,22 @@ public class TeacherWorkspaceService {
                                 .filter(m -> m.getSeccion() != null && Objects.equals(m.getSeccion().getId(), seccion.getId()) && m.getEstado() == MatriculaEstado.ACTIVO)
                                 .count();
                         int receivedCount = (int) entregasActividad.stream().count();
-                        String status = Boolean.TRUE.equals(actividad.getCalificada())
-                                ? "evaluado"
-                                : actividad.getFechaLimite().isBefore(LocalDateTime.now()) ? "calificando" : "activo";
+                        boolean expired = actividad.getFechaLimite().isBefore(LocalDateTime.now());
+                        long pendingReviews = entregasActividad.stream()
+                                .filter(entrega -> entrega.getEstado() != EntregaEstado.REVISADO)
+                                .count();
+                        String status = !expired
+                                ? "activo"
+                                : receivedCount == 0
+                                ? "vencido"
+                                : pendingReviews > 0 ? "calificando" : "evaluado";
 
                         tasks.add(new TeacherWorkspaceResponseDTO.TaskDTO(
                                 "task-" + actividad.getId(),
                                 actividad.getTitulo(),
                                 curso.getNombre(),
                                 seccion.getNombre(),
-                                actividad.getFechaLimite().minusDays(10).toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM")),
+                                "No registrada",
                                 actividad.getFechaLimite().toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM")),
                                 receivedCount,
                                 totalCount,
@@ -361,7 +376,7 @@ public class TeacherWorkspaceService {
 
     private List<TeacherWorkspaceResponseDTO.UrgentTaskDTO> buildUrgentTasks(List<TeacherWorkspaceResponseDTO.TaskDTO> tasks) {
         return tasks.stream()
-                .filter(task -> task.getStatus().equals("activo") || task.getStatus().equals("calificando"))
+                .filter(task -> task.getStatus().equals("activo") || task.getStatus().equals("calificando") || task.getStatus().equals("vencido"))
                 .sorted(Comparator.comparing(TeacherWorkspaceResponseDTO.TaskDTO::getLimitDate))
                 .limit(2)
                 .map(task -> new TeacherWorkspaceResponseDTO.UrgentTaskDTO(
@@ -380,7 +395,7 @@ public class TeacherWorkspaceService {
         long active = tasks.stream().filter(t -> "activo".equalsIgnoreCase(t.getStatus())).count();
         long pendingReview = entregas.stream().filter(e -> e.getEstado() != EntregaEstado.REVISADO).count();
         long delivered = entregas.size();
-        long overdue = tasks.stream().filter(t -> "calificando".equalsIgnoreCase(t.getStatus())).count();
+        long overdue = tasks.stream().filter(t -> "vencido".equalsIgnoreCase(t.getStatus())).count();
         double compliance = tasks.stream().mapToInt(t -> t.getTotalCount() == 0 ? 0 : (int) Math.round((t.getReceivedCount() * 100.0) / t.getTotalCount())).average().orElse(0.0);
 
         return List.of(
@@ -399,10 +414,10 @@ public class TeacherWorkspaceService {
                     Estudiante e = m.getEstudiante();
                     Usuario u = e.getUsuario();
                     List<Asistencia> asistencias = asistenciasPorMatricula.getOrDefault(m.getId(), List.of());
-                    int attendance = (int) Math.round(asistencias.stream()
+                    Integer attendance = asistencias.isEmpty() ? null : (int) Math.round(asistencias.stream()
                             .mapToInt(a -> a.getEstado() == AsistenciaEstado.PRESENTE ? 100 : a.getEstado() == AsistenciaEstado.TARDE ? 75 : 0)
                             .average()
-                            .orElse(92.0));
+                            .orElse(0.0));
                     String todayStatus = asistencias.stream()
                             .sorted(Comparator.comparing(Asistencia::getId).reversed())
                             .map(a -> switch (a.getEstado()) {
@@ -411,7 +426,7 @@ public class TeacherWorkspaceService {
                                 default -> "presente";
                             })
                             .findFirst()
-                            .orElse("presente");
+                            .orElse("sin_registro");
 
                     return new TeacherWorkspaceResponseDTO.AttendanceDTO(
                             "att-" + e.getId(),
@@ -433,14 +448,20 @@ public class TeacherWorkspaceService {
         long present = attendanceRows.stream().filter(a -> "presente".equalsIgnoreCase(a.getTodayStatus())).count();
         long late = attendanceRows.stream().filter(a -> "tardanza".equalsIgnoreCase(a.getTodayStatus())).count();
         long absent = attendanceRows.stream().filter(a -> "falta".equalsIgnoreCase(a.getTodayStatus())).count();
-        double avg = attendanceRows.stream().mapToInt(TeacherWorkspaceResponseDTO.AttendanceDTO::getAttendance).average().orElse(0.0);
+        var attendanceValues = attendanceRows.stream()
+                .map(TeacherWorkspaceResponseDTO.AttendanceDTO::getAttendance)
+                .filter(Objects::nonNull)
+                .toList();
+        Double avg = attendanceValues.isEmpty()
+                ? null
+                : attendanceValues.stream().mapToInt(Integer::intValue).average().orElse(0.0);
 
         return List.of(
                 new TeacherWorkspaceResponseDTO.StatDTO("Estudiantes", total, null, "Users"),
                 new TeacherWorkspaceResponseDTO.StatDTO("Presentes", present, null, "CheckCircle2"),
                 new TeacherWorkspaceResponseDTO.StatDTO("Tardanzas", late, null, "Clock3"),
                 new TeacherWorkspaceResponseDTO.StatDTO("Faltas", absent, null, "AlertTriangle"),
-                new TeacherWorkspaceResponseDTO.StatDTO("Asistencia Promedio", formatPercent(avg), null, "CalendarCheck"),
+                new TeacherWorkspaceResponseDTO.StatDTO("Asistencia Promedio", avg == null ? "Sin registros" : formatPercent(avg), null, "CalendarCheck"),
                 new TeacherWorkspaceResponseDTO.StatDTO("Clases Impartidas", sessionsCount, "sesiones", "Calendar")
         );
     }
@@ -536,15 +557,6 @@ public class TeacherWorkspaceService {
                         "bg-rose-50 text-rose-700 border-rose-100"
                 )
         );
-    }
-
-    private double safeAverage(List<Matricula> matriculas) {
-        return matriculas.stream()
-                .map(m -> m.getEstudiante().getEstadoAcademico())
-                .filter(Objects::nonNull)
-                .mapToInt(estado -> estado == null ? 3 : estado.ordinal() + 2)
-                .average()
-                .orElse(3.2);
     }
 
     private double noteAt(List<Double> notes, int index) {

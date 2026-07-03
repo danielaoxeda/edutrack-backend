@@ -7,6 +7,7 @@ import com.rodrigomv.edutrackbackend.service.ActividadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -55,16 +56,19 @@ public class ActividadController {
     }
     
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ActividadResponseDTO> create(@Valid @RequestBody ActividadRequestDTO actividad) {
         return ResponseEntity.status(201).body(actividadService.save(actividad));
     }
     
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ActividadResponseDTO> update(@PathVariable Long id, @Valid @RequestBody ActividadRequestDTO actividad) {
         return ResponseEntity.ok(actividadService.update(id, actividad));
     }
     
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         actividadService.delete(id);
         return ResponseEntity.noContent().build();

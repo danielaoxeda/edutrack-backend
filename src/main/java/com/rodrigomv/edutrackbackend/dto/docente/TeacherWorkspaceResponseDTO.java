@@ -45,8 +45,8 @@ public class TeacherWorkspaceResponseDTO {
         private String code;
         private String course;
         private String group;
-        private double averageGrade;
-        private int attendance;
+        private Double averageGrade;
+        private Integer attendance;
         private String status;
     }
 
@@ -130,7 +130,7 @@ public class TeacherWorkspaceResponseDTO {
         private String code;
         private String course;
         private String group;
-        private int attendance;
+        private Integer attendance;
         private String todayStatus;
     }
 
