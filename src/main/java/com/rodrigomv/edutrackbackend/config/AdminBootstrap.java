@@ -55,6 +55,7 @@ public class AdminBootstrap implements ApplicationRunner {
                 .orElseThrow(() -> new IllegalStateException("La migracion del rol ADMIN no fue aplicada"));
 
         Usuario admin = usuarioRepository.findByEmail(email.trim().toLowerCase())
+                .map(this::syncAdmin)
                 .orElseGet(this::createAdmin);
 
         if (!usuarioRolRepository.existsByUsuarioIdAndRolId(admin.getId(), adminRole.getId())) {
@@ -75,6 +76,20 @@ public class AdminBootstrap implements ApplicationRunner {
         admin.setPasswordHash(passwordEncoder.encode(password));
         admin.setEstado(UsuarioEstado.ACTIVO);
         admin.setCreatedAt(LocalDateTime.now());
+        return usuarioRepository.save(admin);
+    }
+
+    private Usuario syncAdmin(Usuario admin) {
+        admin.setNombres(firstName.trim());
+        admin.setApellidos(lastName.trim());
+        admin.setEmail(email.trim().toLowerCase());
+        admin.setPasswordHash(passwordEncoder.encode(password));
+        admin.setEstado(UsuarioEstado.ACTIVO);
+
+        if (admin.getCreatedAt() == null) {
+            admin.setCreatedAt(LocalDateTime.now());
+        }
+
         return usuarioRepository.save(admin);
     }
 }
