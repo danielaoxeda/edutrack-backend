@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -81,6 +82,30 @@ public class EntregaService {
             current.setFechaEntrega(entrega.getFechaEntrega());
         }
         return entregaRepository.save(current);
+    }
+
+    public EntregaResponseDTO calificar(Long id, BigDecimal nota, String comentario) {
+        Entrega entrega = entregaRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Entrega no encontrada"));
+
+        if (nota == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La nota es obligatoria");
+        }
+
+        if (nota.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La nota no puede ser negativa");
+        }
+
+        BigDecimal notaMaxima = entrega.getActividad().getNotaMaxima();
+        if (notaMaxima != null && nota.compareTo(notaMaxima) > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La nota no puede exceder " + notaMaxima);
+        }
+
+        entrega.setNota(nota);
+        entrega.setComentarioDocente(comentario != null ? comentario : "");
+        entrega.setEstado(EntregaEstado.CALIFICADO);
+
+        return toResponse(entregaRepository.save(entrega));
     }
     
     public void delete(Long id) {
