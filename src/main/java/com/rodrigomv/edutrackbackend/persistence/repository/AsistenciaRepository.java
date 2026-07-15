@@ -14,6 +14,8 @@ public interface AsistenciaRepository extends JpaRepository<Asistencia, Long> {
     List<Asistencia> findBySesionClaseId(Long sesionId);
     
     List<Asistencia> findByMatriculaId(Long matriculaId);
+
+    List<Asistencia> findByMatriculaIdIn(List<Long> matriculaIds);
     
     List<Asistencia> findByEstado(AsistenciaEstado estado);
     

@@ -11,6 +11,8 @@ import java.util.List;
 public interface AlertaAcademicaRepository extends JpaRepository<AlertaAcademica, Long> {
     
     List<AlertaAcademica> findByMatriculaId(Long matriculaId);
+
+    List<AlertaAcademica> findByMatriculaIdIn(List<Long> matriculaIds);
     
     List<AlertaAcademica> findByTipo(AlertaTipo tipo);
 }

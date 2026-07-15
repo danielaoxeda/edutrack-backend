@@ -14,6 +14,8 @@ public interface EntregaRepository extends JpaRepository<Entrega, Long> {
     List<Entrega> findByActividadId(Long actividadId);
     
     List<Entrega> findByMatriculaId(Long matriculaId);
+
+    List<Entrega> findByMatriculaIdIn(List<Long> matriculaIds);
     
     List<Entrega> findByEstado(EntregaEstado estado);
     

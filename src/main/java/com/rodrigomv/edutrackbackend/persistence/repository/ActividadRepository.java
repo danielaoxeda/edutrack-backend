@@ -20,4 +20,6 @@ public interface ActividadRepository extends JpaRepository<Actividad, Long> {
     List<Actividad> findByFechaLimiteBetween(LocalDateTime inicio, LocalDateTime fin);
     
     List<Actividad> findByCriterioEvaluacionId(Long criterioId);
+
+    List<Actividad> findBySemanaAcademicaSeccionIdInAndVisibleTrueOrderByFechaLimiteAsc(List<Long> seccionIds);
 }
