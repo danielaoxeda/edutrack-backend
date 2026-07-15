@@ -1,6 +1,7 @@
 package com.rodrigomv.edutrackbackend.service;
 
 import com.rodrigomv.edutrackbackend.dto.estudiante.StudentWorkspaceResponseDTO;
+import com.rodrigomv.edutrackbackend.dto.estudiante.StudentActivitySubmissionRequestDTO;
 import com.rodrigomv.edutrackbackend.persistence.entity.*;
 import com.rodrigomv.edutrackbackend.persistence.enums.AsistenciaEstado;
 import com.rodrigomv.edutrackbackend.persistence.enums.EntregaEstado;
@@ -97,6 +98,63 @@ public class StudentWorkspaceService {
                 alertItems,
                 buildTimeline(deliveries, alerts)
         );
+    }
+
+    public StudentWorkspaceResponseDTO.DeliveryDTO submitActivity(Long activityId, StudentActivitySubmissionRequestDTO request) {
+        Estudiante estudiante = currentStudentService.getRequiredStudent();
+        Actividad activity = actividadRepository.findById(activityId)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND,
+                        "Actividad no encontrada"
+                ));
+
+        if (!Boolean.TRUE.equals(activity.getVisible())) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN,
+                    "La actividad no esta disponible para entrega"
+            );
+        }
+
+        Long sectionId = activity.getSemanaAcademica().getSeccion().getId();
+        Matricula enrollment = matriculaRepository.findByEstudianteIdAndSeccionId(estudiante.getId(), sectionId).stream()
+                .filter(matricula -> matricula.getEstado() == MatriculaEstado.ACTIVO)
+                .findFirst()
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.FORBIDDEN,
+                        "No estas matriculado en la seccion de esta actividad"
+                ));
+
+        String comment = request.comentarioAlumno() != null ? request.comentarioAlumno().trim() : "";
+        String fileUrl = request.archivoUrl() != null ? request.archivoUrl().trim() : "";
+
+        if (comment.isBlank() && fileUrl.isBlank()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "Agrega un comentario o un enlace de archivo para enviar la actividad"
+            );
+        }
+
+        Entrega delivery = entregaRepository.findByActividadIdAndMatriculaId(activity.getId(), enrollment.getId())
+                .orElseGet(() -> {
+                    Entrega newDelivery = new Entrega();
+                    newDelivery.setActividad(activity);
+                    newDelivery.setMatricula(enrollment);
+                    return newDelivery;
+                });
+
+        if (delivery.getNota() != null || delivery.getEstado() == EntregaEstado.CALIFICADO) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.CONFLICT,
+                    "La entrega ya fue calificada y no puede modificarse"
+            );
+        }
+
+        delivery.setComentarioAlumno(comment.isBlank() ? null : comment);
+        delivery.setArchivoUrl(fileUrl.isBlank() ? null : fileUrl);
+        delivery.setFechaEntrega(LocalDateTime.now());
+        delivery.setEstado(activity.getFechaLimite().isBefore(LocalDateTime.now()) ? EntregaEstado.ATRASADO : EntregaEstado.ENTREGADO);
+
+        return buildDelivery(entregaRepository.save(delivery));
     }
 
     private StudentWorkspaceResponseDTO.CourseDTO buildCourse(
