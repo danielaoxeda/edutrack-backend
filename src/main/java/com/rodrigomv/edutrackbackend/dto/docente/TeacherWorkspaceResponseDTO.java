@@ -93,10 +93,17 @@ public class TeacherWorkspaceResponseDTO {
     @AllArgsConstructor
     public static class RecentSubmissionDTO {
         private String id;
+        private Long deliveryId;
         private String studentName;
         private String taskName;
         private String courseName;
         private String timeAgo;
+        private String status;
+        private Double maxGrade;
+        private Double grade;
+        private String studentComment;
+        private String teacherComment;
+        private String fileUrl;
     }
 
     @Data

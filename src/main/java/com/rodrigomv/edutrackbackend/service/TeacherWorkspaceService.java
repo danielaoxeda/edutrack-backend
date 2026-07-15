@@ -366,10 +366,17 @@ public class TeacherWorkspaceService {
                 .limit(3)
                 .map(entrega -> new TeacherWorkspaceResponseDTO.RecentSubmissionDTO(
                         "sub-" + entrega.getId(),
+                        entrega.getId(),
                         fullName(entrega.getMatricula().getEstudiante().getUsuario()),
                         entrega.getActividad().getTitulo(),
                         entrega.getMatricula().getSeccion().getCurso().getNombre(),
-                        relativeTime(entrega.getFechaEntrega())
+                        relativeTime(entrega.getFechaEntrega()),
+                        entrega.getEstado() != null ? entrega.getEstado().name() : "ENTREGADO",
+                        entrega.getActividad().getNotaMaxima() != null ? entrega.getActividad().getNotaMaxima().doubleValue() : 0.0,
+                        entrega.getNota() != null ? entrega.getNota().doubleValue() : null,
+                        entrega.getComentarioAlumno(),
+                        entrega.getComentarioDocente(),
+                        entrega.getArchivoUrl()
                 ))
                 .toList();
     }
