@@ -15,7 +15,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ALLOWED_ORIGIN_PATTERNS
-        value: https://edutrackpe.vercel.app,https://*.vercel.app
+        value: https://edutrackpe.vercel.app,https://*.vercel.app,https://*.app.github.dev,https://*.github.dev
       - key: SPRING_PROFILES_ACTIVE
         value: default
       - key: HIBERNATE_DDL_AUTO
